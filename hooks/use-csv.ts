@@ -1,4 +1,5 @@
-const regex = /(?!\B"[^"]*)[	,;](?![^"]*"\B)/
+const SEPARATOR_REGEX = /(?!\B"[^"]*)[	,;](?![^"]*"\B)/
+const QUOTED_REGEX = /(?<!.)(\B")|"\B(?!.)/g
 
 export function useCSV(csvString: string, hasHeaders = true) {
   // Regex matches characters "  ", "," or ";" unless they're enclosed by quotes
@@ -8,13 +9,13 @@ export function useCSV(csvString: string, hasHeaders = true) {
     .split("\n")
 
   const rows = rawRows.reduce<string[][]>((acc, row) => {
-    const data = row.split(regex)
+    const data = row.split(SEPARATOR_REGEX)
 
     // Handles removal of quotes within strings
     // Example: '"The Gambia"' => "The Gambia"
     data.forEach((entry, index) => {
-      if (entry.match(/\"/g)) {
-        data[index] = entry.replace(/\"/g, "")
+      if (entry.match(QUOTED_REGEX)) {
+        data[index] = entry.replace(QUOTED_REGEX, "")
       }
     })
 
