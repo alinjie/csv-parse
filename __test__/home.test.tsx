@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render } from "@testing-library/react"
+import { fireEvent, render } from "@testing-library/react"
 import "@testing-library/jest-dom"
-import Home from ".."
+import Home from "../pages"
 
 const CSV = `Country_Name,Country_Code,Population
 Norway,NO,1000
