@@ -1,82 +1,140 @@
-import Head from 'next/head'
+import { InferGetStaticPropsType } from "next"
+import { useCSV } from "../hooks/use-csv"
+import { usePagination } from "../hooks/use-pagination"
+import { range } from "../utils/range"
+import cx from "classnames"
+import { useState } from "react"
+import { useSortedData } from "../hooks/use-sorted-data"
 
-export default function Home() {
+type Sorting = {
+  column: string
+  direction: "DESC" | "ASC" | undefined
+}
+
+export default function Home({
+  csv,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
+  const [sorting, setSorting] = useState<Sorting>()
+  const { rows, headers } = useCSV(csv, true)
+  const sortedData = useSortedData(
+    headers,
+    rows,
+    sorting?.column,
+    sorting?.direction
+  )
+
+  const { data, numberOfPages, setPage, currentPage } =
+    usePagination(sortedData)
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-2">
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main className="flex w-full flex-1 flex-col items-center justify-center px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="rounded-md bg-gray-100 p-3 font-mono text-lg">
-            pages/index.tsx
-          </code>
-        </p>
-
-        <div className="mt-6 flex max-w-4xl flex-wrap items-center justify-around sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
+    <div className="grid h-screen w-screen place-content-center">
+      <table className="block max-w-6xl  overflow-auto rounded border  text-left text-xs">
+        <thead>
+          <tr className="bg-indigo-500 text-white">
+            {headers.map((header, index) => (
+              <th
+                key={index}
+                data-testid={`column-${index}`}
+                className="cursor-pointer whitespace-nowrap  p-4"
+                onClick={() =>
+                  setSorting({
+                    column: header,
+                    direction: sorting?.direction === "DESC" ? "ASC" : "DESC",
+                  })
+                }
+              >
+                <div className="flex items-center ">
+                  {header.replace(/_/g, " ")}
+                  {sorting?.column === header && (
+                    <span className="ml-1 block">
+                      {sorting?.direction === "DESC" ? (
+                        <svg
+                          className="h-3 w-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                          data-testid="icon-descending"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+                          ></path>
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-3 w-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                          data-testid="icon-ascending"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                          ></path>
+                        </svg>
+                      )}
+                    </span>
+                  )}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, index) => (
+            <tr
+              key={index}
+              className={cx(index % 2 === 1 ? "bg-indigo-50" : "bg-white")}
+              data-testid={`row-${index + 1}`}
+            >
+              {row.map((entry, index) => (
+                <td key={index} className="whitespace-nowrap border-b p-4">
+                  {entry}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className="mx-auto mt-4 flex space-x-2">
+        {range(numberOfPages).map((page) => (
+          <button
+            className={cx(
+              "h-7 w-7 rounded-full text-sm ",
+              currentPage === page
+                ? "bg-indigo-500 text-white"
+                : "text-indigo-500"
+            )}
+            key={page}
+            onClick={() => setPage(page)}
           >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="mt-6 w-96 rounded-xl border p-6 text-left hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex h-24 w-full items-center justify-center border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="ml-2 h-4" />
-        </a>
-      </footer>
+            {page}
+          </button>
+        ))}
+      </div>
     </div>
   )
+}
+
+export async function getStaticProps() {
+  const response = await fetch(
+    "https://pkgstore.datahub.io/JohnSnowLabs/population-figures-by-country/population-figures-by-country-csv_csv/data/630580e802a621887384f99527b68f59/population-figures-by-country-csv_csv.csv"
+  )
+
+  if (!response.ok) {
+    throw new Error(await response.text())
+  }
+
+  const csv = await response.text()
+
+  return {
+    props: { csv },
+  }
 }
